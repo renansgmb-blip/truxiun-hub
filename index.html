@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truxiun HUB - Sua Key</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0f0f0f;
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: #1a1a2e;
+            border: 1px solid #7289da;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(114,137,218,0.3);
+        }
+        .logo { font-size: 48px; margin-bottom: 10px; }
+        h1 { color: #7289da; font-size: 24px; margin-bottom: 5px; }
+        .subtitle { color: #aaa; font-size: 14px; margin-bottom: 30px; }
+        .key-box {
+            background: #0f0f0f;
+            border: 2px solid #7289da;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .key-label { color: #aaa; font-size: 12px; margin-bottom: 8px; }
+        .key-value {
+            color: #00ff88;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            font-family: monospace;
+        }
+        .copy-btn {
+            background: #7289da;
+            color: #fff;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+            transition: 0.2s;
+        }
+        .copy-btn:hover { background: #5b6eae; }
+        .copy-btn.copied { background: #00cc66; }
+        .info {
+            margin-top: 20px;
+            background: #0f0f0f;
+            border-radius: 10px;
+            padding: 15px;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #222;
+            font-size: 14px;
+        }
+        .info-item:last-child { border-bottom: none; }
+        .info-label { color: #aaa; }
+        .info-value { color: #fff; font-weight: bold; }
+        .discord-btn {
+            display: block;
+            background: #5865f2;
+            color: #fff;
+            text-decoration: none;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        .discord-btn:hover { background: #4752c4; }
+        .error {
+            color: #ff4444;
+            font-size: 16px;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">⚡</div>
+        <h1>Truxiun HUB</h1>
+        <p class="subtitle">Sua key foi gerada com sucesso!</p>
+
+        <div id="content">
+            <div class="key-box">
+                <div class="key-label">🔑 SUA KEY</div>
+                <div class="key-value" id="key-display">Carregando...</div>
+            </div>
+            <button class="copy-btn" id="copy-btn" onclick="copiarKey()">
+                📋 Copiar Key
+            </button>
+            <div class="info">
+                <div class="info-item">
+                    <span class="info-label">Validade</span>
+                    <span class="info-value" id="validade">3 dias</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Resets HWID</span>
+                    <span class="info-value">0 (apenas keys pagas)</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Tipo</span>
+                    <span class="info-value">Gratuita</span>
+                </div>
+            </div>
+            <a href="https://discord.gg/pjAzcrfv" class="discord-btn">
+                💬 Entrar no Discord
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const key = params.get("key");
+
+        if (key) {
+            document.getElementById("key-display").textContent = key;
+        } else {
+            document.getElementById("key-display").textContent = "Key nao encontrada!";
+            document.getElementById("copy-btn").style.display = "none";
+        }
+
+        function copiarKey() {
+            const key = document.getElementById("key-display").textContent;
+            navigator.clipboard.writeText(key);
+            const btn = document.getElementById("copy-btn");
+            btn.textContent = "✅ Copiado!";
+            btn.classList.add("copied");
+            setTimeout(() => {
+                btn.textContent = "📋 Copiar Key";
+                btn.classList.remove("copied");
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
