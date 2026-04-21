@@ -1,0 +1,1052 @@
+-- Truxiun HUB | Universal Script
+-- Sistema de Key + NeverLose UI
+-- Versão 3.1 — GUI Profissional Corrigida
+
+local API_URL      = "https://flavorful-culpable-valuables.ngrok-free.dev"
+local DISCORD_LINK = "https://discord.gg/pjAzcrfv"
+local KEY_FILE     = "TruxiunKey.txt"
+
+-- ─── SERVIÇOS ───────────────────────────────────────────────────────────────
+local Players          = game:GetService("Players")
+local HttpService      = game:GetService("HttpService")
+local RunService       = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService     = game:GetService("TweenService")
+local LocalPlayer      = Players.LocalPlayer
+local PlayerGui        = LocalPlayer:WaitForChild("PlayerGui")
+
+-- ─── HWID ───────────────────────────────────────────────────────────────────
+local function getHWID()
+    return game:GetService("RbxAnalyticsService"):GetClientId()
+end
+
+-- ─── SALVAR / CARREGAR KEY ──────────────────────────────────────────────────
+local function salvarKey(key)
+    pcall(function() writefile(KEY_FILE, key) end)
+end
+
+local function carregarKeySalva()
+    local ok, content = pcall(function() return readfile(KEY_FILE) end)
+    if ok and content and content ~= "" then
+        return content:gsub("%s+", "")
+    end
+    return nil
+end
+
+local function deletarKeySalva()
+    pcall(function()
+        if isfile(KEY_FILE) then delfile(KEY_FILE) end
+    end)
+end
+
+-- ─── VERIFICAR KEY ──────────────────────────────────────────────────────────
+local function verificarKey(inputKey)
+    local hwid = getHWID()
+    local success, response = pcall(function()
+        return game:HttpGet(API_URL .. "/verificar?key=" .. inputKey .. "&hwid=" .. hwid)
+    end)
+    if not success then return false, "Erro ao conectar com a API." end
+    local ok, data = pcall(function() return HttpService:JSONDecode(response) end)
+    if not ok then return false, "Resposta invalida da API." end
+    return data.valido, data.motivo
+end
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- KEY GUI — PROFISSIONAL v3.1 (BUGS CORRIGIDOS)
+-- ════════════════════════════════════════════════════════════════════════════
+local keyGui = Instance.new("ScreenGui")
+keyGui.Name          = "TruxiunKeyGui"
+keyGui.ResetOnSpawn  = false
+keyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+keyGui.Parent        = PlayerGui
+
+-- ─── FUNDO ───────────────────────────────────────────────────────────────────
+local overlay = Instance.new("Frame")
+overlay.Size                  = UDim2.new(1,0,1,0)
+overlay.BackgroundColor3      = Color3.fromRGB(6,4,14)
+overlay.BackgroundTransparency = 0
+overlay.BorderSizePixel       = 0
+overlay.ZIndex                = 1
+overlay.Parent                = keyGui
+
+-- ─── ESTRELAS DECORATIVAS (BUG CORRIGIDO: math.random(0,100)/100) ────────────
+for i = 1, 20 do
+    local star        = Instance.new("Frame")
+    local sz          = math.random(2, 5)
+    star.Size         = UDim2.new(0, sz, 0, sz)
+    star.Position     = UDim2.new(math.random(0,100)/100, 0, math.random(0,100)/100, 0)
+    star.BackgroundColor3 = Color3.fromRGB(math.random(140,255), math.random(80,180), 255)
+    star.BackgroundTransparency = math.random(30,70)/100
+    star.BorderSizePixel = 0
+    star.ZIndex       = 1
+    star.Parent       = overlay
+    Instance.new("UICorner", star).CornerRadius = UDim.new(1,0)
+
+    local delay = math.random(0,30)/10
+    task.spawn(function()
+        task.wait(delay)
+        while star and star.Parent do
+            local t1 = TweenService:Create(star,
+                TweenInfo.new(math.random(20,40)/10, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                { BackgroundTransparency = math.random(60,90)/100 })
+            t1:Play(); t1.Completed:Wait()
+            local t2 = TweenService:Create(star,
+                TweenInfo.new(math.random(20,40)/10, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                { BackgroundTransparency = math.random(5,35)/100 })
+            t2:Play(); t2.Completed:Wait()
+        end
+    end)
+end
+
+-- ─── CONTAINER PRINCIPAL ─────────────────────────────────────────────────────
+-- BUG CORRIGIDO: sem UIGradient no mesmo frame que faz tween de transparência
+-- BUG CORRIGIDO: frame começa visível, animação só move posição
+local frame = Instance.new("Frame")
+frame.Size                  = UDim2.new(0, 460, 0, 320)
+frame.Position              = UDim2.new(0.5, -230, 0.58, -160) -- começa um pouco abaixo
+frame.BackgroundColor3      = Color3.fromRGB(13, 10, 24)
+frame.BackgroundTransparency = 0
+frame.BorderSizePixel       = 0
+frame.ZIndex                = 2
+frame.Parent                = keyGui
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 16)
+
+-- Animação de entrada (só posição, sem mexer em transparência)
+TweenService:Create(frame,
+    TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+    { Position = UDim2.new(0.5, -230, 0.5, -160) }
+):Play()
+
+-- Borda brilhante
+local border = Instance.new("UIStroke")
+border.Color      = Color3.fromRGB(95, 55, 255)
+border.Thickness  = 1.5
+border.Transparency = 0.2
+border.Parent     = frame
+
+-- Animação da borda pulsando
+task.spawn(function()
+    while frame and frame.Parent do
+        TweenService:Create(border, TweenInfo.new(2.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+            { Transparency = 0.75, Color = Color3.fromRGB(130, 80, 255) }):Play()
+        task.wait(2.2)
+        TweenService:Create(border, TweenInfo.new(2.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+            { Transparency = 0.05, Color = Color3.fromRGB(75, 35, 220) }):Play()
+        task.wait(2.2)
+    end
+end)
+
+-- ─── FAIXA DE GLOW NO TOPO ───────────────────────────────────────────────────
+local topBar = Instance.new("Frame")
+topBar.Size             = UDim2.new(1, 0, 0, 4)
+topBar.Position         = UDim2.new(0, 0, 0, 0)
+topBar.BackgroundColor3 = Color3.fromRGB(110, 55, 255)
+topBar.BorderSizePixel  = 0
+topBar.ZIndex           = 3
+topBar.Parent           = frame
+Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 16)
+
+-- Fix cantos inferiores da barra
+local topBarFix = Instance.new("Frame")
+topBarFix.Size             = UDim2.new(1, 0, 0.5, 0)
+topBarFix.Position         = UDim2.new(0, 0, 0.5, 0)
+topBarFix.BackgroundColor3 = Color3.fromRGB(110, 55, 255)
+topBarFix.BorderSizePixel  = 0
+topBarFix.ZIndex           = 3
+topBarFix.Parent           = topBar
+
+-- Animação da barra de cima
+task.spawn(function()
+    while topBar and topBar.Parent do
+        TweenService:Create(topBar, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+            { BackgroundColor3 = Color3.fromRGB(160, 90, 255) }):Play()
+        task.wait(2)
+        TweenService:Create(topBar, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+            { BackgroundColor3 = Color3.fromRGB(70, 30, 200) }):Play()
+        task.wait(2)
+    end
+end)
+
+-- ─── CÍRCULO DO LOGO ─────────────────────────────────────────────────────────
+local logoBg = Instance.new("Frame")
+logoBg.Size             = UDim2.new(0, 62, 0, 62)
+logoBg.Position         = UDim2.new(0.5, -31, 0, 18)
+logoBg.BackgroundColor3 = Color3.fromRGB(88, 50, 240)
+logoBg.BorderSizePixel  = 0
+logoBg.ZIndex           = 4
+logoBg.Parent           = frame
+Instance.new("UICorner", logoBg).CornerRadius = UDim.new(1, 0)
+
+local logoBorder = Instance.new("UIStroke")
+logoBorder.Color       = Color3.fromRGB(190, 140, 255)
+logoBorder.Thickness   = 2.5
+logoBorder.Transparency = 0.2
+logoBorder.Parent      = logoBg
+
+task.spawn(function()
+    while logoBg and logoBg.Parent do
+        TweenService:Create(logoBorder, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+            { Transparency = 0.8 }):Play()
+        task.wait(2)
+        TweenService:Create(logoBorder, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+            { Transparency = 0.0 }):Play()
+        task.wait(2)
+    end
+end)
+
+local logoIcon = Instance.new("TextLabel")
+logoIcon.Size                = UDim2.new(1, 0, 1, 0)
+logoIcon.BackgroundTransparency = 1
+logoIcon.Text                = "⚡"
+logoIcon.TextColor3          = Color3.fromRGB(255, 255, 255)
+logoIcon.Font                = Enum.Font.GothamBold
+logoIcon.TextSize             = 28
+logoIcon.ZIndex              = 5
+logoIcon.Parent              = logoBg
+
+-- ─── TÍTULO ──────────────────────────────────────────────────────────────────
+-- BUG CORRIGIDO: removido LetterSpacing (não existe no Roblox)
+local titleLbl = Instance.new("TextLabel")
+titleLbl.Size                = UDim2.new(1, 0, 0, 26)
+titleLbl.Position            = UDim2.new(0, 0, 0, 88)
+titleLbl.BackgroundTransparency = 1
+titleLbl.Text                = "TRUXIUN HUB"
+titleLbl.TextColor3          = Color3.fromRGB(255, 255, 255)
+titleLbl.Font                = Enum.Font.GothamBold
+titleLbl.TextSize             = 20
+titleLbl.ZIndex              = 3
+titleLbl.Parent              = frame
+
+local subLbl = Instance.new("TextLabel")
+subLbl.Size                = UDim2.new(1, 0, 0, 18)
+subLbl.Position            = UDim2.new(0, 0, 0, 116)
+subLbl.BackgroundTransparency = 1
+subLbl.Text                = "Insira sua key de acesso"
+subLbl.TextColor3          = Color3.fromRGB(140, 115, 200)
+subLbl.Font                = Enum.Font.Gotham
+subLbl.TextSize             = 13
+subLbl.ZIndex              = 3
+subLbl.Parent              = frame
+
+-- ─── SEPARADOR ───────────────────────────────────────────────────────────────
+local sep = Instance.new("Frame")
+sep.Size             = UDim2.new(0, 320, 0, 1)
+sep.Position         = UDim2.new(0.5, -160, 0, 140)
+sep.BackgroundColor3 = Color3.fromRGB(90, 55, 190)
+sep.BackgroundTransparency = 0.4
+sep.BorderSizePixel  = 0
+sep.ZIndex           = 3
+sep.Parent           = frame
+
+-- ─── BADGE KEY SALVA ─────────────────────────────────────────────────────────
+local savedBadge = Instance.new("Frame")
+savedBadge.Size             = UDim2.new(0, 380, 0, 24)
+savedBadge.Position         = UDim2.new(0.5, -190, 0, 148)
+savedBadge.BackgroundColor3 = Color3.fromRGB(15, 45, 20)
+savedBadge.BackgroundTransparency = 0.1
+savedBadge.BorderSizePixel  = 0
+savedBadge.ZIndex           = 3
+savedBadge.Visible          = false
+savedBadge.Parent           = frame
+Instance.new("UICorner", savedBadge).CornerRadius = UDim.new(0, 6)
+
+local savedBadgeLbl = Instance.new("TextLabel")
+savedBadgeLbl.Size                = UDim2.new(1, -10, 1, 0)
+savedBadgeLbl.Position            = UDim2.new(0, 5, 0, 0)
+savedBadgeLbl.BackgroundTransparency = 1
+savedBadgeLbl.Text                = "✅  Key salva detectada — clique em Verificar!"
+savedBadgeLbl.TextColor3          = Color3.fromRGB(80, 255, 120)
+savedBadgeLbl.Font                = Enum.Font.Gotham
+savedBadgeLbl.TextSize             = 12
+savedBadgeLbl.TextXAlignment      = Enum.TextXAlignment.Center
+savedBadgeLbl.ZIndex              = 4
+savedBadgeLbl.Parent              = savedBadge
+
+-- ─── INPUT DA KEY ────────────────────────────────────────────────────────────
+local keyBoxBg = Instance.new("Frame")
+keyBoxBg.Size             = UDim2.new(0, 380, 0, 46)
+keyBoxBg.Position         = UDim2.new(0.5, -190, 0, 178)
+keyBoxBg.BackgroundColor3 = Color3.fromRGB(18, 14, 32)
+keyBoxBg.BorderSizePixel  = 0
+keyBoxBg.ZIndex           = 3
+keyBoxBg.Parent           = frame
+Instance.new("UICorner", keyBoxBg).CornerRadius = UDim.new(0, 10)
+
+local keyBoxStroke = Instance.new("UIStroke")
+keyBoxStroke.Color      = Color3.fromRGB(65, 40, 140)
+keyBoxStroke.Thickness  = 1.5
+keyBoxStroke.Parent     = keyBoxBg
+
+local keyBox = Instance.new("TextBox")
+keyBox.Size                = UDim2.new(1, -20, 1, 0)
+keyBox.Position            = UDim2.new(0, 10, 0, 0)
+keyBox.BackgroundTransparency = 1
+keyBox.PlaceholderText     = "XXXX-XXXX-XXXX-XXXX"
+keyBox.PlaceholderColor3   = Color3.fromRGB(65, 50, 105)
+keyBox.Text                = ""
+keyBox.TextColor3          = Color3.fromRGB(220, 200, 255)
+keyBox.Font                = Enum.Font.Code
+keyBox.TextSize             = 15
+keyBox.ClearTextOnFocus    = false
+keyBox.ZIndex              = 4
+keyBox.Parent              = keyBoxBg
+
+keyBox.Focused:Connect(function()
+    TweenService:Create(keyBoxStroke, TweenInfo.new(0.18),
+        { Color = Color3.fromRGB(140, 85, 255), Thickness = 2 }):Play()
+end)
+keyBox.FocusLost:Connect(function()
+    TweenService:Create(keyBoxStroke, TweenInfo.new(0.18),
+        { Color = Color3.fromRGB(65, 40, 140), Thickness = 1.5 }):Play()
+end)
+
+-- ─── STATUS ──────────────────────────────────────────────────────────────────
+local statusLbl = Instance.new("TextLabel")
+statusLbl.Size                = UDim2.new(0, 380, 0, 18)
+statusLbl.Position            = UDim2.new(0.5, -190, 0, 228)
+statusLbl.BackgroundTransparency = 1
+statusLbl.Text                = ""
+statusLbl.TextColor3          = Color3.fromRGB(255, 90, 90)
+statusLbl.Font                = Enum.Font.Gotham
+statusLbl.TextSize             = 12
+statusLbl.TextXAlignment      = Enum.TextXAlignment.Center
+statusLbl.ZIndex              = 3
+statusLbl.Parent              = frame
+
+-- ─── BOTÃO VERIFICAR ─────────────────────────────────────────────────────────
+local btnVerify = Instance.new("TextButton")
+btnVerify.Size             = UDim2.new(0, 380, 0, 42)
+btnVerify.Position         = UDim2.new(0.5, -190, 0, 250)
+btnVerify.BackgroundColor3 = Color3.fromRGB(88, 50, 240)
+btnVerify.BorderSizePixel  = 0
+btnVerify.Text             = "✅   Verificar Key"
+btnVerify.TextColor3       = Color3.fromRGB(255, 255, 255)
+btnVerify.Font             = Enum.Font.GothamBold
+btnVerify.TextSize          = 14
+btnVerify.ZIndex           = 3
+btnVerify.Parent           = frame
+Instance.new("UICorner", btnVerify).CornerRadius = UDim.new(0, 10)
+
+btnVerify.MouseEnter:Connect(function()
+    TweenService:Create(btnVerify, TweenInfo.new(0.15),
+        { BackgroundColor3 = Color3.fromRGB(115, 75, 255) }):Play()
+end)
+btnVerify.MouseLeave:Connect(function()
+    TweenService:Create(btnVerify, TweenInfo.new(0.15),
+        { BackgroundColor3 = Color3.fromRGB(88, 50, 240) }):Play()
+end)
+
+-- ─── BOTÃO DISCORD ───────────────────────────────────────────────────────────
+local btnDiscord = Instance.new("TextButton")
+btnDiscord.Size             = UDim2.new(0, 380, 0, 28)
+btnDiscord.Position         = UDim2.new(0.5, -190, 0, 297)
+btnDiscord.BackgroundColor3 = Color3.fromRGB(16, 12, 30)
+btnDiscord.BorderSizePixel  = 0
+btnDiscord.Text             = "🎮   Pegar Key no Discord"
+btnDiscord.TextColor3       = Color3.fromRGB(130, 110, 195)
+btnDiscord.Font             = Enum.Font.Gotham
+btnDiscord.TextSize          = 12
+btnDiscord.ZIndex           = 3
+btnDiscord.Parent           = frame
+Instance.new("UICorner", btnDiscord).CornerRadius = UDim.new(0, 8)
+
+local btnDStroke = Instance.new("UIStroke")
+btnDStroke.Color      = Color3.fromRGB(55, 35, 115)
+btnDStroke.Thickness  = 1
+btnDStroke.Parent     = btnDiscord
+
+btnDiscord.MouseEnter:Connect(function()
+    TweenService:Create(btnDiscord, TweenInfo.new(0.15),
+        { BackgroundColor3 = Color3.fromRGB(26, 20, 50) }):Play()
+    TweenService:Create(btnDStroke, TweenInfo.new(0.15),
+        { Color = Color3.fromRGB(110, 75, 210) }):Play()
+end)
+btnDiscord.MouseLeave:Connect(function()
+    TweenService:Create(btnDiscord, TweenInfo.new(0.15),
+        { BackgroundColor3 = Color3.fromRGB(16, 12, 30) }):Play()
+    TweenService:Create(btnDStroke, TweenInfo.new(0.15),
+        { Color = Color3.fromRGB(55, 35, 115) }):Play()
+end)
+
+-- ─── VERSÃO ──────────────────────────────────────────────────────────────────
+local vLbl = Instance.new("TextLabel")
+vLbl.Size                = UDim2.new(1, 0, 0, 14)
+vLbl.Position            = UDim2.new(0, 0, 1, -15)
+vLbl.BackgroundTransparency = 1
+vLbl.Text                = "v3.1  •  Truxiun HUB"
+vLbl.TextColor3          = Color3.fromRGB(55, 40, 95)
+vLbl.Font                = Enum.Font.Gotham
+vLbl.TextSize             = 11
+vLbl.ZIndex              = 3
+vLbl.Parent              = frame
+
+-- ─── AUTO-PREENCHE KEY SALVA ─────────────────────────────────────────────────
+local keySalva = carregarKeySalva()
+if keySalva then
+    keyBox.Text       = keySalva
+    savedBadge.Visible = true
+    subLbl.Text       = "Key salva encontrada! Clique em Verificar."
+    subLbl.TextColor3 = Color3.fromRGB(80, 200, 110)
+end
+
+-- ─── LOADING ANIMATION ───────────────────────────────────────────────────────
+local loadingTexts = {
+    "⏳   Verificando",
+    "⏳   Verificando.",
+    "⏳   Verificando..",
+    "⏳   Verificando...",
+}
+local function animarLoading(btn)
+    local running = true
+    local idx = 1
+    task.spawn(function()
+        while running do
+            btn.Text = loadingTexts[idx]
+            idx = idx % #loadingTexts + 1
+            task.wait(0.35)
+        end
+    end)
+    return function() running = false end
+end
+
+-- ─── SHAKE ───────────────────────────────────────────────────────────────────
+local function shake(obj, offset)
+    local orig = obj.Position
+    for i = 1, 5 do
+        obj.Position = orig + UDim2.new(0, i%2==0 and offset or -offset, 0, 0)
+        task.wait(0.04)
+    end
+    obj.Position = orig
+end
+
+-- ─── AÇÕES DOS BOTÕES ────────────────────────────────────────────────────────
+btnDiscord.MouseButton1Click:Connect(function()
+    setclipboard(DISCORD_LINK)
+    btnDiscord.Text      = "✅   Link copiado!"
+    btnDiscord.TextColor3 = Color3.fromRGB(80, 255, 120)
+    task.wait(2)
+    btnDiscord.Text      = "🎮   Pegar Key no Discord"
+    btnDiscord.TextColor3 = Color3.fromRGB(130, 110, 195)
+end)
+
+btnVerify.MouseButton1Click:Connect(function()
+    local inputKey = keyBox.Text:gsub("%s+", "")
+    if inputKey == "" then
+        statusLbl.Text      = "❌   Cole sua key no campo acima!"
+        statusLbl.TextColor3 = Color3.fromRGB(255, 90, 90)
+        shake(keyBoxBg, 6)
+        return
+    end
+
+    btnVerify.Active = false
+    statusLbl.Text   = ""
+    local stopLoad   = animarLoading(btnVerify)
+    TweenService:Create(btnVerify, TweenInfo.new(0.2),
+        { BackgroundColor3 = Color3.fromRGB(45, 30, 110) }):Play()
+
+    local valido, motivo = verificarKey(inputKey)
+    stopLoad()
+
+    if valido then
+        btnVerify.Text = "✅   Acesso Liberado!"
+        TweenService:Create(btnVerify, TweenInfo.new(0.3),
+            { BackgroundColor3 = Color3.fromRGB(25, 145, 60) }):Play()
+        statusLbl.Text       = "✅   " .. motivo
+        statusLbl.TextColor3  = Color3.fromRGB(80, 255, 120)
+        salvarKey(inputKey)
+
+        task.wait(0.9)
+        -- Animação de saída
+        TweenService:Create(frame, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+            { Position = UDim2.new(0.5, -230, 0.42, -160) }):Play()
+        TweenService:Create(overlay, TweenInfo.new(0.45),
+            { BackgroundTransparency = 1 }):Play()
+        task.wait(0.45)
+        keyGui:Destroy()
+        carregarHub()
+    else
+        if keySalva and inputKey == keySalva then
+            deletarKeySalva()
+            savedBadge.BackgroundColor3 = Color3.fromRGB(50, 20, 8)
+            savedBadgeLbl.Text          = "⚠️   Key salva expirou — cole uma nova"
+            savedBadgeLbl.TextColor3    = Color3.fromRGB(255, 175, 60)
+        end
+        statusLbl.Text       = "❌   " .. motivo
+        statusLbl.TextColor3  = Color3.fromRGB(255, 90, 90)
+        btnVerify.Text        = "✅   Verificar Key"
+        TweenService:Create(btnVerify, TweenInfo.new(0.3),
+            { BackgroundColor3 = Color3.fromRGB(88, 50, 240) }):Play()
+        shake(frame, 7)
+        btnVerify.Active = true
+    end
+end)
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- HUB PRINCIPAL
+-- ════════════════════════════════════════════════════════════════════════════
+function carregarHub()
+    local NeverLose = loadstring(game:HttpGet(
+        "https://raw.githubusercontent.com/4lpaca-pin/NeverLose/refs/heads/main/source.luau"
+    ))()
+
+    local Notification = NeverLose:CreateNotification()
+    local Logging      = NeverLose:CreateLogger()
+
+    local window = NeverLose:CreateWindow({
+        Logo             = NeverLose.GlobalLogo,
+        Name             = "Truxiun HUB",
+        Content          = "Universal",
+        Size             = NeverLose.Scales.Default,
+        ConfigFolder     = "TruxiunConfigs",
+        Enable3DRenderer = false,
+        Keybind          = "Insert"
+    })
+
+    local Watermark = window:Watermark()
+    local pingBlock = Watermark:AddBlock("chart-four-vertical-bars","0MS")
+    task.spawn(function()
+        while true do
+            task.wait(1)
+            pingBlock:SetText(tostring(math.floor(LocalPlayer:GetNetworkPing()*1000)).."MS")
+        end
+    end)
+
+    Notification.new({ Title="Truxiun HUB", Content="Key verificada! Bem-vindo.", Duration=5 })
+
+    local configFlags = { WalkSpeed=16, JumpPower=50, Noclip=false, Fly=false }
+
+    LocalPlayer.CharacterAdded:Connect(function(newChar)
+        task.wait(1)
+        local hum = newChar:WaitForChild("Humanoid", 5)
+        if not hum then return end
+        if configFlags.WalkSpeed ~= 16 then hum.WalkSpeed = configFlags.WalkSpeed end
+        if configFlags.JumpPower ~= 50  then hum.JumpPower = configFlags.JumpPower end
+        configFlags.Fly    = false
+        configFlags.Noclip = false
+        Logging.new("person-standing","Personagem respawnou! Fly e Noclip desativados.",3)
+    end)
+
+    -- ══════════════════════════════════════════
+    -- ABA 1 — VISUAL
+    -- ══════════════════════════════════════════
+    local tabVisual = window:AddTab({ Icon="eye", Name="Visual" })
+    local secESP    = tabVisual:AddSection({ Name="ESP" })
+    local secChams  = tabVisual:AddSection({ Name="CHAMS", Position="right" })
+
+    local espEnabled = false
+    local espObjects = {}
+    local espColor   = Color3.fromRGB(255,50,50)
+
+    local function limparESP()
+        for _,o in pairs(espObjects) do pcall(function() o:Destroy() end) end
+        espObjects = {}
+    end
+
+    local function criarESP(player)
+        if player == LocalPlayer then return end
+        task.spawn(function()
+            local function setupESPParaChar(char)
+                if not char then return end
+                local hrp = char:WaitForChild("HumanoidRootPart", 5)
+                if not hrp or not espEnabled then return end
+                local hl = Instance.new("Highlight")
+                hl.FillColor=espColor hl.OutlineColor=Color3.fromRGB(255,255,255)
+                hl.FillTransparency=0.5 hl.OutlineTransparency=0
+                hl.Adornee=char hl.Parent=char
+                table.insert(espObjects, hl)
+                local bb = Instance.new("BillboardGui")
+                bb.Size=UDim2.new(0,120,0,40) bb.StudsOffset=Vector3.new(0,3,0)
+                bb.AlwaysOnTop=true bb.Adornee=hrp bb.Parent=hrp
+                table.insert(espObjects, bb)
+                local nameLbl = Instance.new("TextLabel")
+                nameLbl.Size=UDim2.new(1,0,0.5,0) nameLbl.BackgroundTransparency=1
+                nameLbl.Text=player.Name nameLbl.TextColor3=Color3.fromRGB(255,255,255)
+                nameLbl.Font=Enum.Font.GothamBold nameLbl.TextSize=14
+                nameLbl.TextStrokeTransparency=0 nameLbl.Parent=bb
+                local hpLbl = Instance.new("TextLabel")
+                hpLbl.Size=UDim2.new(1,0,0.5,0) hpLbl.Position=UDim2.new(0,0,0.5,0)
+                hpLbl.BackgroundTransparency=1 hpLbl.TextColor3=Color3.fromRGB(100,255,100)
+                hpLbl.Font=Enum.Font.Gotham hpLbl.TextSize=12
+                hpLbl.TextStrokeTransparency=0 hpLbl.Parent=bb
+                task.spawn(function()
+                    while bb and bb.Parent do
+                        task.wait(0.5)
+                        local hum = char:FindFirstChildOfClass("Humanoid")
+                        if hum then hpLbl.Text="HP: "..math.floor(hum.Health).."/"..math.floor(hum.MaxHealth) end
+                    end
+                end)
+            end
+            setupESPParaChar(player.Character)
+            player.CharacterAdded:Connect(function(newChar)
+                if espEnabled then task.wait(0.5) setupESPParaChar(newChar) end
+            end)
+        end)
+    end
+
+    secESP:AddLabel("ESP Jogadores"):AddToggle({
+        Default=false, Flag="ESP_Players",
+        Callback=function(v)
+            espEnabled=v
+            if v then
+                for _,p in pairs(Players:GetPlayers()) do criarESP(p) end
+                Players.PlayerAdded:Connect(function(p) if espEnabled then criarESP(p) end end)
+                Logging.new("eye","ESP ativado!",3)
+            else limparESP() Logging.new("eye","ESP desativado!",3) end
+        end
+    })
+
+    secESP:AddLabel("Cor do ESP"):AddDropdown({
+        Default="Vermelho", Values={"Vermelho","Verde","Azul","Branco","Amarelo","Rosa"}, Flag="ESP_Color",
+        Callback=function(v)
+            local c={Vermelho=Color3.fromRGB(255,50,50),Verde=Color3.fromRGB(50,255,50),
+                     Azul=Color3.fromRGB(50,50,255),Branco=Color3.fromRGB(255,255,255),
+                     Amarelo=Color3.fromRGB(255,220,0),Rosa=Color3.fromRGB(255,100,200)}
+            espColor=c[v]
+            for _,o in pairs(espObjects) do if o:IsA("Highlight") then o.FillColor=espColor end end
+        end
+    })
+
+    secESP:AddLabel("Transparencia Fill"):AddSlider({
+        Min=0,Max=10,Default=5,Rounding=1,Type="/10",Size=100,Flag="ESP_FillTransp",
+        Callback=function(v)
+            for _,o in pairs(espObjects) do if o:IsA("Highlight") then o.FillTransparency=v/10 end end
+        end
+    })
+
+    local chamsObjects = {}
+    local function limparChams()
+        for _,o in pairs(chamsObjects) do pcall(function() o:Destroy() end) end chamsObjects={}
+    end
+    local function criarChams(player)
+        if player==LocalPlayer then return end
+        task.spawn(function()
+            local char=player.Character or player.CharacterAdded:Wait()
+            char:WaitForChild("HumanoidRootPart",5)
+            local hl=Instance.new("Highlight")
+            hl.FillColor=Color3.fromRGB(255,150,0) hl.OutlineColor=Color3.fromRGB(255,255,0)
+            hl.FillTransparency=0 hl.OutlineTransparency=0
+            hl.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
+            hl.Adornee=char hl.Parent=char
+            table.insert(chamsObjects,hl)
+        end)
+    end
+
+    secChams:AddLabel("Chams"):AddToggle({
+        Default=false,Flag="Chams",
+        Callback=function(v)
+            if v then for _,p in pairs(Players:GetPlayers()) do criarChams(p) end Logging.new("eye","Chams ativado!",3)
+            else limparChams() Logging.new("eye","Chams desativado!",3) end
+        end
+    })
+
+    secChams:AddLabel("Fullbright"):AddToggle({
+        Default=false,Flag="Fullbright",
+        Callback=function(v)
+            local L=game:GetService("Lighting")
+            if v then L.Brightness=2 L.ClockTime=14 L.FogEnd=100000 L.GlobalShadows=false L.OutdoorAmbient=Color3.fromRGB(128,128,128)
+            else L.Brightness=1 L.ClockTime=14 L.GlobalShadows=true end
+        end
+    })
+
+    -- ══════════════════════════════════════════
+    -- ABA 2 — TROLL
+    -- ══════════════════════════════════════════
+    local tabTroll=window:AddTab({Icon="triangle-alert",Name="Troll"})
+    local secVoadora=tabTroll:AddSection({Name="VOADORA"})
+    local secJerk=tabTroll:AddSection({Name="JERK / BANG",Position="right"})
+
+    secVoadora:AddLabel("Voadora FE"):AddToggle({
+        Default=false,Flag="Voadora",
+        Callback=function(v)
+            if v then
+                loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Fe-DropKick-Script-165813"))()
+                Logging.new("triangle-alert","Voadora ativada!",4)
+            end
+        end
+    })
+
+    local jerkAtivo=false
+    secJerk:AddLabel("Jerk Off"):AddToggle({
+        Default=false,Flag="Jerk",
+        Callback=function(v)
+            jerkAtivo=v
+            if v then
+                local hum=LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+                local pack=LocalPlayer:FindFirstChildWhichIsA("Backpack")
+                if hum and pack then
+                    local tool=Instance.new("Tool")
+                    tool.Name="Jerk Off" tool.RequiresHandle=false tool.Parent=pack
+                    local jorkin,track=false,nil
+                    local function stop()
+                        jorkin=false
+                        if track then track:Stop() track=nil end
+                        if not jerkAtivo then tool:Destroy() end
+                    end
+                    tool.Equipped:Connect(function() jorkin=true end)
+                    tool.Unequipped:Connect(stop) hum.Died:Connect(stop)
+                    task.spawn(function()
+                        while jerkAtivo do
+                            if not jorkin then task.wait(0.1) continue end
+                            local r15=hum.RigType==Enum.HumanoidRigType.R15
+                            if not track then
+                                local a=Instance.new("Animation")
+                                a.AnimationId=not r15 and "rbxassetid://72042024" or "rbxassetid://698251653"
+                                track=hum:LoadAnimation(a)
+                            end
+                            track:Play() track:AdjustSpeed(r15 and 0.7 or 0.65) track.TimePosition=0.6
+                            task.wait(0.1)
+                            while track and track.TimePosition<(not r15 and 0.65 or 0.7) do task.wait(0.1) end
+                            if track then track:Stop() track=nil end
+                        end
+                    end)
+                end
+                Logging.new("triangle-alert","Jerk ativado!",4)
+            end
+        end
+    })
+
+    local playerList=(function()
+        local l={}
+        for _,p in pairs(Players:GetPlayers()) do if p~=LocalPlayer then table.insert(l,p.Name) end end
+        if #l==0 then table.insert(l,"Nenhum jogador") end
+        return l
+    end)()
+
+    local bangTarget=playerList[1]
+    local bangAnim,bangTrack,bangLoop=nil,nil,nil
+    local secBang=tabTroll:AddSection({Name="BANG"})
+
+    secBang:AddLabel("Alvo"):AddDropdown({
+        Default=playerList[1] or "Nenhum jogador",Values=playerList,Flag="BangTarget",
+        Callback=function(v) bangTarget=v end
+    })
+
+    secBang:AddLabel("Bang"):AddToggle({
+        Default=false,Flag="Bang",
+        Callback=function(v)
+            local hum=LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+            if v and hum then
+                local r15=hum.RigType==Enum.HumanoidRigType.R15
+                bangAnim=Instance.new("Animation")
+                bangAnim.AnimationId=not r15 and "rbxassetid://148840371" or "rbxassetid://5918726674"
+                bangTrack=hum:LoadAnimation(bangAnim)
+                bangTrack:Play(0.1,1,1) bangTrack:AdjustSpeed(3)
+                local hrp=LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                bangLoop=RunService.Stepped:Connect(function()
+                    pcall(function()
+                        local t=Players:FindFirstChild(bangTarget)
+                        if t and t.Character then
+                            local th=t.Character:FindFirstChild("HumanoidRootPart") or t.Character:FindFirstChild("Torso")
+                            if th then hrp.CFrame=th.CFrame*CFrame.new(0,0,1.1) end
+                        end
+                    end)
+                end)
+                Logging.new("triangle-alert","Bang em: "..bangTarget,4)
+            else
+                if bangTrack then bangTrack:Stop() bangTrack=nil end
+                if bangAnim  then bangAnim:Destroy() bangAnim=nil end
+                if bangLoop  then bangLoop:Disconnect() bangLoop=nil end
+            end
+        end
+    })
+
+    local secAcoes=tabTroll:AddSection({Name="ACOES NO ALVO"})
+
+    secAcoes:AddLabel("Teleportar ao Alvo"):AddToggle({
+        Default=false,Flag="TpAlvo",
+        Callback=function(v)
+            if v then
+                local t=Players:FindFirstChild(bangTarget)
+                if t and t.Character then
+                    local tHrp=t.Character:FindFirstChild("HumanoidRootPart")
+                    local mHrp=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if tHrp and mHrp then
+                        mHrp.CFrame=tHrp.CFrame+Vector3.new(3,0,0)
+                        Logging.new("crosshairs","Teleportado ate "..bangTarget,3)
+                    end
+                end
+            end
+        end
+    })
+
+    secAcoes:AddLabel("Spectate Alvo"):AddToggle({
+        Default=false,Flag="SpectateAlvo",
+        Callback=function(v)
+            local t=Players:FindFirstChild(bangTarget)
+            if v and t and t.Character then
+                workspace.CurrentCamera.CameraSubject=t.Character
+                Logging.new("eye","Spectating "..bangTarget,3)
+            else
+                workspace.CurrentCamera.CameraSubject=LocalPlayer.Character
+            end
+        end
+    })
+
+    -- ══════════════════════════════════════════
+    -- ABA 3 — PLAYER
+    -- ══════════════════════════════════════════
+    local tabPlayer=window:AddTab({Icon="person-standing",Name="Player"})
+    local secMovement=tabPlayer:AddSection({Name="MOVEMENT"})
+    local secSpecial=tabPlayer:AddSection({Name="SPECIAL",Position="right"})
+
+    local flyAtivo=false local flyBody=nil local flyConn=nil local flySpeed=50
+
+    local function ativarFly()
+        local char=LocalPlayer.Character
+        local hrp=char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+        local bv=Instance.new("BodyVelocity")
+        bv.Name="TruxiunFlyBV" bv.Velocity=Vector3.zero bv.MaxForce=Vector3.new(1e5,1e5,1e5) bv.Parent=hrp
+        local bg=Instance.new("BodyGyro")
+        bg.Name="TruxiunFlyBG" bg.MaxTorque=Vector3.new(1e5,1e5,1e5) bg.D=100 bg.CFrame=hrp.CFrame bg.Parent=hrp
+        flyBody={bv=bv,bg=bg}
+        local Cam=workspace.CurrentCamera
+        flyConn=RunService.Heartbeat:Connect(function()
+            if not flyAtivo then return end
+            local dir=Vector3.zero local cf=Cam.CFrame
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir=dir+cf.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir=dir-cf.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir=dir-cf.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir=dir+cf.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir=dir+Vector3.new(0,1,0) end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then dir=dir-Vector3.new(0,1,0) end
+            bv.Velocity=dir.Magnitude>0 and dir.Unit*flySpeed or Vector3.zero
+            bg.CFrame=cf
+        end)
+        Logging.new("person-standing","Fly ativado! W/A/S/D + Espaco/Ctrl",4)
+    end
+
+    local function desativarFly()
+        if flyConn then flyConn:Disconnect() flyConn=nil end
+        if flyBody then pcall(function() flyBody.bv:Destroy() end) pcall(function() flyBody.bg:Destroy() end) flyBody=nil end
+        local hum=LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum.PlatformStand=false end
+        Logging.new("person-standing","Fly desativado!",3)
+    end
+
+    secMovement:AddLabel("Fly"):AddToggle({
+        Default=false,Flag="Fly",
+        Callback=function(v) flyAtivo=v configFlags.Fly=v if v then ativarFly() else desativarFly() end end
+    })
+
+    secMovement:AddLabel("Velocidade do Voo"):AddSlider({
+        Min=10,Max=300,Default=50,Rounding=0,Type=" studs/s",Size=100,Flag="FlySpeed",
+        Callback=function(v) flySpeed=v end
+    })
+
+    secMovement:AddLabel(" ")
+
+    local noclipAtivo=false local noclipConn=nil
+
+    secMovement:AddLabel("Noclip"):AddToggle({
+        Default=false,Flag="Noclip",
+        Callback=function(v)
+            noclipAtivo=v configFlags.Noclip=v
+            if v then
+                noclipConn=RunService.Stepped:Connect(function()
+                    if not noclipAtivo then return end
+                    local c=LocalPlayer.Character if not c then return end
+                    for _,p in pairs(c:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide=false end end
+                end)
+                Logging.new("person-standing","Noclip ativado!",3)
+            else
+                if noclipConn then noclipConn:Disconnect() noclipConn=nil end
+                local c=LocalPlayer.Character
+                if c then for _,p in pairs(c:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide=true end end end
+                Logging.new("person-standing","Noclip desativado!",3)
+            end
+        end
+    })
+
+    secMovement:AddLabel(" ")
+
+    secMovement:AddLabel("WalkSpeed"):AddSlider({
+        Min=8,Max=500,Default=16,Rounding=0,Type="",Size=100,Flag="WalkSpeed",
+        Callback=function(v)
+            configFlags.WalkSpeed=v
+            local hum=LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then hum.WalkSpeed=v end
+        end
+    })
+
+    secMovement:AddLabel(" ")
+
+    secMovement:AddLabel("JumpPower"):AddSlider({
+        Min=7,Max=500,Default=50,Rounding=0,Type="",Size=100,Flag="JumpPower",
+        Callback=function(v)
+            configFlags.JumpPower=v
+            local hum=LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then hum.JumpPower=v end
+        end
+    })
+
+    secMovement:AddLabel(" ")
+
+    local antiAfkConn=nil
+    secMovement:AddLabel("Anti-AFK"):AddToggle({
+        Default=false,Flag="AntiAFK",
+        Callback=function(v)
+            if v then
+                local VU=game:GetService("VirtualUser")
+                antiAfkConn=LocalPlayer.Idled:Connect(function()
+                    VU:CaptureController() VU:ClickButton2(Vector2.new())
+                end)
+                Logging.new("person-standing","Anti-AFK ativado!",3)
+            else
+                if antiAfkConn then antiAfkConn:Disconnect() antiAfkConn=nil end
+                Logging.new("person-standing","Anti-AFK desativado!",3)
+            end
+        end
+    })
+
+    local ghostAtivo=false local ghostConn=nil local ghostOrigCam=nil
+
+    secSpecial:AddLabel("Ghost Mode"):AddToggle({
+        Default=false,Flag="GhostMode",
+        Callback=function(v)
+            ghostAtivo=v
+            local Camera=workspace.CurrentCamera
+            local char=LocalPlayer.Character
+            local hrp=char and char:FindFirstChild("HumanoidRootPart")
+            local hum=char and char:FindFirstChildOfClass("Humanoid")
+            if v then
+                if hrp then
+                    local a=Instance.new("BodyPosition")
+                    a.Name="TruxiunGhostAnchor" a.Position=hrp.Position
+                    a.MaxForce=Vector3.new(1e5,1e5,1e5) a.D=1000 a.Parent=hrp
+                end
+                if hum then hum.WalkSpeed=0 end
+                ghostOrigCam=Camera.CameraType
+                Camera.CameraType=Enum.CameraType.Scriptable
+                UserInputService.MouseBehavior=Enum.MouseBehavior.LockCenter
+                local camPos=Camera.CFrame.Position
+                local camYaw,camPitch=0,0
+                do local rx,ry=Camera.CFrame:ToOrientation() camPitch=rx camYaw=ry end
+                local ghostSpeed=60
+                ghostConn=RunService.Heartbeat:Connect(function(dt)
+                    if not ghostAtivo then return end
+                    local delta=UserInputService:GetMouseDelta()
+                    camYaw=camYaw-delta.X*0.004
+                    camPitch=math.clamp(camPitch-delta.Y*0.004,-math.rad(85),math.rad(85))
+                    local rotCF=CFrame.fromEulerAnglesYXZ(camPitch,camYaw,0)
+                    local dir=Vector3.zero
+                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir=dir+rotCF.LookVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir=dir-rotCF.LookVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir=dir-rotCF.RightVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir=dir+rotCF.RightVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir=dir+Vector3.new(0,1,0) end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then dir=dir-Vector3.new(0,1,0) end
+                    if dir.Magnitude>0 then camPos=camPos+dir.Unit*ghostSpeed*dt end
+                    Camera.CFrame=CFrame.new(camPos)*rotCF
+                end)
+                Logging.new("eye","Ghost Mode ativado!",6)
+            else
+                if ghostConn then ghostConn:Disconnect() ghostConn=nil end
+                UserInputService.MouseBehavior=Enum.MouseBehavior.Default
+                if hrp then local a=hrp:FindFirstChild("TruxiunGhostAnchor") if a then a:Destroy() end end
+                if hum then hum.WalkSpeed=configFlags.WalkSpeed end
+                Camera.CameraType=ghostOrigCam or Enum.CameraType.Custom
+                Logging.new("eye","Ghost Mode desativado!",3)
+            end
+        end
+    })
+
+    local invisRunning=false local TurnVis_FN=nil
+
+    secSpecial:AddLabel("Invisivel"):AddToggle({
+        Default=false,Flag="Invisible",
+        Callback=function(v)
+            if v then
+                if invisRunning then return end
+                invisRunning=true
+                local Player=LocalPlayer
+                local Character=Player.Character
+                if not Character then invisRunning=false return end
+                Character.Archivable=true
+                local Phantom=Character:Clone()
+                for _,part in pairs(Phantom:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.Transparency=part.Name=="HumanoidRootPart" and 1 or 0.5
+                    end
+                end
+                local savedCF=Character:FindFirstChild("HumanoidRootPart") and Character.HumanoidRootPart.CFrame
+                Character.Parent=game:GetService("Lighting")
+                Phantom.Parent=workspace
+                local phantomHRP=Phantom:FindFirstChild("HumanoidRootPart")
+                if savedCF and phantomHRP then phantomHRP.CFrame=savedCF end
+                Player.Character=Phantom
+                workspace.CurrentCamera.CameraSubject=Phantom:FindFirstChildOfClass("Humanoid") or Phantom
+                task.wait(0.1)
+                pcall(function() Player.Character.Animate.Disabled=true Player.Character.Animate.Disabled=false end)
+                local IsInvis=true
+                local syncConn=RunService.Heartbeat:Connect(function()
+                    if not IsInvis then return end
+                    pcall(function()
+                        local pHRP=Phantom:FindFirstChild("HumanoidRootPart")
+                        local cHRP=Character:FindFirstChild("HumanoidRootPart")
+                        if pHRP and cHRP then cHRP.CFrame=pHRP.CFrame end
+                    end)
+                end)
+                TurnVis_FN=function()
+                    if not IsInvis then return end
+                    IsInvis=false syncConn:Disconnect()
+                    local curCF=Phantom:FindFirstChild("HumanoidRootPart") and Phantom.HumanoidRootPart.CFrame
+                    Character.Parent=workspace
+                    if curCF then
+                        local origHRP=Character:FindFirstChild("HumanoidRootPart")
+                        if origHRP then origHRP.CFrame=curCF end
+                    end
+                    Player.Character=Character
+                    workspace.CurrentCamera.CameraSubject=Character:FindFirstChildOfClass("Humanoid") or Character
+                    pcall(function() Phantom:Destroy() end)
+                    task.wait(0.1)
+                    pcall(function() Player.Character.Animate.Disabled=true Player.Character.Animate.Disabled=false end)
+                    invisRunning=false
+                end
+                pcall(function()
+                    Phantom:FindFirstChildOfClass("Humanoid").Died:Connect(function() pcall(TurnVis_FN) end)
+                end)
+                Logging.new("eye","Invisivel ativado!",5)
+            else
+                if TurnVis_FN then pcall(TurnVis_FN) end
+                invisRunning=false
+                Logging.new("eye","Visivel novamente!",3)
+            end
+        end
+    })
+
+    -- ─── SETTINGS ─────────────────────────────────────────────────────────────
+    local UserSettings=window.UserSettings
+
+    UserSettings:AddLabel("Keybind Menu"):AddKeybind({
+        Default="Insert",
+        Callback=function(v) window.Keybind=v end
+    })
+
+    UserSettings:AddLabel("Escala"):AddDropdown({
+        Default="Default",Values={"Default","Large","Mobile","Small"},
+        Callback=function(v) window:SetSize(NeverLose.Scales[v]) end
+    })
+
+    UserSettings:AddButton({
+        Icon="discord",Name="Discord",
+        Callback=function()
+            setclipboard(DISCORD_LINK)
+            Logging.new("discord","Link do Discord copiado!",4)
+        end
+    })
+
+    UserSettings:AddButton({
+        Icon="trash",Name="Limpar Key Salva",
+        Callback=function()
+            deletarKeySalva()
+            Logging.new("trash","Key salva removida!",4)
+        end
+    })
+
+    Notification.new({
+        Title="Truxiun HUB",
+        Content="Carregado com sucesso! Use INSERT para abrir/fechar.",
+        Duration=6,
+    })
+end
